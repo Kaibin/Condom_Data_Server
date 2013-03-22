@@ -16,7 +16,7 @@
 This is a copy of bson.json_util, but justs converts what is in the _id field
 to and from an ObjectId instance.  Won't work with embedded object ids.
 """
-
+import json
 import calendar
 import datetime
 import re
@@ -53,9 +53,9 @@ def object_hook(dct):
         return ObjectId(str(dct["$oid"]))
     if "$ref" in dct:
         return DBRef(dct["$ref"], dct["$id"], dct.get("$db", None))
-    if "$date" in dct:
-        return datetime.datetime.fromtimestamp(float(dct["$date"]) / 1000.0,
-            utc)
+#    if "$date" in dct:
+#        return datetime.datetime.fromtimestamp(float(dct["$date"]) / 1000.0,
+#            utc)
     if "$regex" in dct:
         flags = 0
         if "i" in dct["$options"]:
@@ -79,11 +79,12 @@ def default(obj):
         return obj.as_doc()
     if isinstance(obj, datetime.datetime):
         # TODO share this code w/ bson.py?
-        if obj.utcoffset() is not None:
-            obj = obj - obj.utcoffset()
-        millis = int(calendar.timegm(obj.timetuple()) * 1000 +
-                     obj.microsecond / 1000)
-        return {"$date": millis}
+#        if obj.utcoffset() is not None:
+#            obj = obj - obj.utcoffset()
+#        millis = int(calendar.timegm(obj.timetuple()) * 1000 +
+#                     obj.microsecond / 1000)
+#        return {"$date": millis}
+        return json.dumps(obj.isoformat())
     if isinstance(obj, _RE_TYPE):
         flags = ""
         if obj.flags & re.IGNORECASE:

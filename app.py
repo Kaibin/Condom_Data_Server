@@ -3,6 +3,7 @@ import pymongo
 from bson.objectid import ObjectId
 from flask import Flask, url_for, json, request, Response
 import json_util
+import datetime
 
 #configuration
 MONGODB_HOST = 'localhost'
@@ -17,6 +18,7 @@ connection = pymongo.Connection(app.config['MONGODB_HOST'], app.config['MONGODB_
 items = connection['condom']['item']
 items2 = connection['condom']['item2']
 brands = connection['condom']['brand']
+comments = connection['condom']['comment']
 
 def json_load(data):
     return json.loads(data, object_hook=json_util.object_hook)
@@ -45,6 +47,26 @@ def list_items():
 @app.route('/api/brands')
 def list_brands():
     result = brands.find().sort('brand_id',1)
+    js = json_dump(list(result))
+    resp = Response(js, status=200, mimetype='application/json')
+    return resp
+
+@app.route('/api/addComment',methods=['GET', 'POST'])
+def add_comment():
+    author = request.form['author']
+    content = request.form['content']
+    item_id = request.form['item_id']
+    comment = {"item_id": item_id, "author": author, "date": datetime.datetime.utcnow(), "content": content}
+    comments.insert(comment)
+    return ''
+
+@app.route('/api/comments')
+def list_comments():
+    item_id = request.args.get('item_id')
+    if item_id:
+        result = comments.find({'item_id':item_id})
+    else:
+        result = comments.find().sort('date')
     js = json_dump(list(result))
     resp = Response(js, status=200, mimetype='application/json')
     return resp
