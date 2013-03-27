@@ -4,6 +4,7 @@ from bson.objectid import ObjectId
 from flask import Flask, url_for, json, request, Response
 import json_util
 import datetime
+import solr
 
 #configuration
 MONGODB_HOST = 'localhost'
@@ -19,6 +20,9 @@ items = connection['condom']['item']
 items2 = connection['condom']['item2']
 brands = connection['condom']['brand']
 comments = connection['condom']['comment']
+
+# connection to solr server
+solrConnection = solr.SolrConnection('http://127.0.0.1:8983/solr')
 
 def json_load(data):
     return json.loads(data, object_hook=json_util.object_hook)
@@ -70,6 +74,25 @@ def list_comments():
     js = json_dump(list(result))
     resp = Response(js, status=200, mimetype='application/json')
     return resp
+
+@app.route('/api/query')
+def query():
+    keyword = request.args.get('kw')
+    results = []
+    if keyword:
+        #查询solr
+        response = solrConnection.query('all:' + keyword, rows=100)
+        for hit in response.results:
+            id = hit['id']
+            _id = ObjectId(id)
+            #根据id从数据库中获取记录
+            doc = items.find_one({"_id": _id})
+            results.append(doc)
+
+    js = json_dump(list(results))
+    resp = Response(js, status=200, mimetype='application/json')
+    return resp
+
 
 if __name__ == '__main__':
     app.run(debug=True)
