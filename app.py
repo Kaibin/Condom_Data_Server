@@ -87,6 +87,8 @@ def query():
             _id = ObjectId(id)
             #根据id从数据库中获取记录
             doc = items.find_one({"_id": _id})
+            if (doc == None):
+                doc = items2.find_one({"_id":_id})
             results.append(doc)
 
     js = json_dump(list(results))
