@@ -20,6 +20,7 @@ items = connection['condom']['item']
 items2 = connection['condom']['item2']
 brands = connection['condom']['brand']
 comments = connection['condom']['comment']
+articles = connection['condom']['article']
 
 # connection to solr server
 solrConnection = solr.SolrConnection('http://127.0.0.1:8983/solr')
@@ -92,6 +93,19 @@ def query():
             results.append(doc)
 
     js = json_dump(list(results))
+    resp = Response(js, status=200, mimetype='application/json')
+    return resp
+
+@app.route('/api/articles')
+def list_articles():
+    start = request.args.get('start')
+    count = request.args.get('count')
+    filter = articles.find()
+    if start and count:
+        result = filter.sort('_id',1).skip(int(str(start))).limit(int(str(count)))
+    else:
+        result = filter
+    js = json_dump(list(result))
     resp = Response(js, status=200, mimetype='application/json')
     return resp
 
