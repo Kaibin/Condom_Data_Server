@@ -21,6 +21,7 @@ items2 = connection['condom']['item2']
 brands = connection['condom']['brand']
 comments = connection['condom']['comment']
 articles = connection['condom']['article']
+article_cat = connection['condom']['article_cat']
 
 # connection to solr server
 solrConnection = solr.SolrConnection('http://127.0.0.1:8983/solr')
@@ -68,10 +69,15 @@ def add_comment():
 @app.route('/api/comments')
 def list_comments():
     item_id = request.args.get('item_id')
+    start = request.args.get('start')
+    count = request.args.get('count')
     if item_id:
         result = comments.find({'item_id':item_id})
     else:
         result = comments.find().sort('date')
+    if start and count:
+        result = result.sort('_id',1).skip(int(str(start))).limit(int(str(count)))
+
     js = json_dump(list(result))
     resp = Response(js, status=200, mimetype='application/json')
     return resp
@@ -100,7 +106,11 @@ def query():
 def list_articles():
     start = request.args.get('start')
     count = request.args.get('count')
-    filter = articles.find()
+    cat_id = request.args.get('cat_id')
+    if cat_id:
+        filter = articles.find({'cat_id':int(cat_id)})
+    else:
+        filter = articles.find()
     if start and count:
         result = filter.sort('_id',1).skip(int(str(start))).limit(int(str(count)))
     else:
@@ -109,6 +119,12 @@ def list_articles():
     resp = Response(js, status=200, mimetype='application/json')
     return resp
 
+@app.route('/api/article_cat')
+def list_article_cat():
+    result = article_cat.find().sort('cat_id',1)
+    js = json_dump(list(result))
+    resp = Response(js, status=200, mimetype='application/json')
+    return resp
 
 if __name__ == '__main__':
     app.run(debug=True)
